@@ -1,0 +1,55 @@
+version: '3.7'
+
+#  定义服务
+services:
+  # 指定服务名称，例如spring-boot服务
+  app-server:
+    build:
+      # 配置需要构建Dockerfile的路径 相对于docker-compose.yml
+      context: .
+      dockerfile: Dockerfile
+    # 指定服务运行的端口
+    ports:
+      # 将本机8080端口映射到容器8080端口
+      - "18080:8080"
+    restart: always
+    # 需要依赖的服务 率先构建
+    depends_on:
+      - mysqlDb
+      - redis
+      - mongodb
+      - nginx
+  mysqlDb:
+    # 指定服务使用的镜像
+    image: mysql:8.0.24
+    # 指定容器名称
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+  redis:
+    image: redis:6.2.4
+    # 指定容器名称
+    container_name: redis
+    command: ["redis-server", "--protected-mode", "no", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+  mongodb:
+    image: mongo:4.4.6
+    container_name: mongoDB
+    ports:
+      - "27017:27017"
+  nginx: #服务名称
+    image: nginx:latest
+    # 指定容器名称
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      #挂载：前面是挂载到哪儿，后面是nginx得配置目录
+      - /root/docker-compose/nginx/dist:/usr/share/nginx/html
+      - /root/docker-compose/nginx/nginx.conf:/etc/nginx/nginx.conf
+    #解决nginx得文件调用权限的问题
+    privileged: true
+    restart: always
